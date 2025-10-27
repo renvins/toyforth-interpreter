@@ -94,6 +94,7 @@ tfobj *createListObject(size_t capacity) {
   return o;
 }
 
+/* Creates the needed context (stack) for the operations */
 tfctx *createContext() {
   tfctx *ctx = xmalloc(sizeof(tfctx));
 
@@ -126,6 +127,9 @@ tfobj *stackPop(tfctx *ctx) {
 }
 
 /* ===================== List Manipulation =================== */
+
+/* This function append an object to a tfobjects list.
+ * It is resized when the len reaches maximum capacity */
 void listAppendObject(tfobj *list, tfobj *o) {
   if (list->list.len >= list->list.capacity) {
     list->list.capacity = list->list.capacity * 2;
@@ -138,6 +142,8 @@ void listAppendObject(tfobj *list, tfobj *o) {
 
 /* ===================== Read file =================== */
 
+/* This function totally reads data (text) from
+ * a file. It will be used to compile our data */
 char *readFile(const char *filename) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
@@ -157,6 +163,8 @@ char *readFile(const char *filename) {
 
 /* ===================== Compile & Execute =================== */
 
+/* This function creates a parsers and a list of tfobject
+ * to make them readable and executable by execute function */
 tfobj *compile(char *progtxt) {
   tfparser *pstorage = xmalloc(sizeof(tfparser));
   pstorage->prg = progtxt;
