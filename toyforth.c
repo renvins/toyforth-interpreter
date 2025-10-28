@@ -1,3 +1,5 @@
+#include <ctype.h>
+#include <libc.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -163,6 +165,39 @@ char *readFile(const char *filename) {
 
 /* ===================== Compile & Execute =================== */
 
+void skipWhitespace(tfparser *p) {
+  while (*(p->p) && isspace(*(p->p))) {
+    p->p++;
+  }
+}
+
+/* This function parses an object from the current
+ * pointed element of the parser. It checks between
+ * a number and a symbol */
+tfobj *parseObject(tfparser *p) {
+  char c = *p->p;
+  if (isdigit(c) || (c == '-') && isdigit(*(p->p + 1))) {
+    char *end_ptr;
+    // strtol converts string to long, last arg is base
+    // end_ptr moves to the next of last digit
+    int val = strtol(p->p, &end_ptr, 10);
+    p->p = end_ptr;
+
+    return createIntObject(val);
+  } else {
+    char *start = p->p;
+    while (*p->p != '\0' && !isspace(*p->p)) {
+      p->p++;
+    }
+    size_t len = p->p - start;
+    char *sym_str = xmalloc(len + 1);
+    memcpy(sym_str, start, len);
+    sym_str[len] = '\0';
+
+    return createSymbolObject(sym_str, len);
+  }
+}
+
 /* This function creates a parsers and a list of tfobject
  * to make them readable and executable by execute function */
 tfobj *compile(char *progtxt) {
@@ -171,7 +206,32 @@ tfobj *compile(char *progtxt) {
   pstorage->p = progtxt; // p is the moving pointer
 
   tfobj *program_list = createListObject(16);
+
+  while (*(pstorage->p) != '\0') {
+    skipWhitespace(pstorage);
+    if (*pstorage->p == '\0')
+      break;
+
+    tfobj *o = parseObject(pstorage);
+    if (o) {
+      listAppendObject(program_list, o);
+    }
+  }
   return program_list;
+}
+
+void exec(tfctx *ctx, tfobj *program) {
+  for (int i = 0; i < program->list.len; i++) {
+    tfobj *o = program->list.ele[i];
+    switch (o->type) {
+    case TFOBJ_TYPE_INT:
+    case TFOBJ_TYPE_BOOL:
+      // It's just data so we can
+      // push it to the stack
+      stackPush(ctx, o);
+      break;
+    }
+  }
 }
 
 int main(int argc, char **argv) {
@@ -198,5 +258,18 @@ int main(int argc, char **argv) {
 
   char *progtxt = readFile(argv[1]);
   printf("This is the file i've read: %s", progtxt);
+
+  tfobj *program = compile(progtxt);
+  printf("Compiled program has %zu objects:\n", program->list.len);
+  for (size_t i = 0; i < program->list.len; i++) {
+    tfobj *o = program->list.ele[i];
+    if (o->type == TFOBJ_TYPE_INT) {
+      printf("  Object %zu: INT (%d)\n", i, o->i);
+    } else if (o->type == TFOBJ_TYPE_SYMBOL) {
+      printf("  Object %zu: SYMBOL (%s)\n", i, o->str.ptr);
+    } else {
+      printf("  Object %zu: OTHER (%d)\n", i, o->type);
+    }
+  }
   return 0;
 }
