@@ -163,6 +163,38 @@ char *readFile(const char *filename) {
   return buffer;
 }
 
+/* ===================== Primitives Operations =================== */
+void primitiveAdd(tfctx *ctx) {
+  if ((ctx->capacity - ctx->sp) < 2) {
+    fprintf(stderr, "Not enough values in the stack!\n");
+    exit(1);
+  }
+  tfobj *first = stackPop(ctx);
+  tfobj *second = stackPop(ctx);
+
+  if (first->type != TFOBJ_TYPE_INT || second->type != TFOBJ_TYPE_INT) {
+    fprintf(stderr, "The addition requires two integers\n");
+    exit(1);
+  }
+  int result = first->i + second->i;
+  tfobj *objResult = createIntObject(result);
+
+  stackPush(ctx, objResult);
+}
+
+void primitivePrint(tfctx *ctx) {
+  if ((ctx->capacity - ctx->sp) < 1) {
+    fprintf(stderr, "Not enough values in the stack \n");
+    exit(1);
+  }
+  tfobj *val = stackPop(ctx);
+  if (val->type != TFOBJ_TYPE_INT) {
+    fprintf(stderr, "Can't print a symbol\n");
+    exit(1);
+  }
+  printf("%d\n", val->i);
+}
+
 /* ===================== Compile & Execute =================== */
 
 void skipWhitespace(tfparser *p) {
@@ -230,6 +262,13 @@ void exec(tfctx *ctx, tfobj *program) {
       // push it to the stack
       stackPush(ctx, o);
       break;
+    case TFOBJ_TYPE_SYMBOL:
+      if (strcmp(o->str.ptr, "+") == 0) {
+        primitiveAdd(ctx);
+      } else if (strcmp(o->str.ptr, ".") == 0) {
+        primitivePrint(ctx);
+      }
+      break;
     }
   }
 }
@@ -240,36 +279,11 @@ int main(int argc, char **argv) {
     return 1;
   }
   tfctx *ctx = createContext();
-  tfobj *list = createListObject(5);
-
-  for (int i = 0; i < 5; i++) {
-    tfobj *o = createIntObject(i);
-    stackPush(ctx, o);
-    listAppendObject(list, o);
-  }
-
-  int list_index = 0;
-  while (ctx->sp != 0) {
-    tfobj *o = stackPop(ctx);
-    printf("Current popped object: %d\n", o->i);
-    printf("Current list item: %d\n", list->list.ele[list_index]->i);
-    list_index++;
-  }
 
   char *progtxt = readFile(argv[1]);
   printf("This is the file i've read: %s", progtxt);
 
   tfobj *program = compile(progtxt);
-  printf("Compiled program has %zu objects:\n", program->list.len);
-  for (size_t i = 0; i < program->list.len; i++) {
-    tfobj *o = program->list.ele[i];
-    if (o->type == TFOBJ_TYPE_INT) {
-      printf("  Object %zu: INT (%d)\n", i, o->i);
-    } else if (o->type == TFOBJ_TYPE_SYMBOL) {
-      printf("  Object %zu: SYMBOL (%s)\n", i, o->str.ptr);
-    } else {
-      printf("  Object %zu: OTHER (%d)\n", i, o->type);
-    }
-  }
+  exec(ctx, program);
   return 0;
 }
