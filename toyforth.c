@@ -41,6 +41,12 @@ typedef struct tfctx {
   size_t capacity; // the maximum capacity of the stack
 } tfctx;
 
+/* ===================== Forward Declarations =================== */
+
+/* Tell the compiler these functions exist, to resolve circular dependency */
+void freeObject(tfobj *o);
+void decRef(tfobj *o);
+
 /* ===================== De/Allocation wrappers =================== */
 
 void *xmalloc(size_t size) {
@@ -61,11 +67,27 @@ void freeObject(tfobj *o) {
     free(o->str.ptr);
   } else if (o->type == TFOBJ_TYPE_LIST) {
     for (int i = 0; i < o->list.len; i++) {
-      freeObject(o->list.ele[i]);
+      decRef(o->list.ele[i]);
     }
     free(o->list.ele);
   }
   free(o);
+}
+
+void incRef(tfobj *o) {
+  if (o == NULL)
+    return;
+  o->refcount++;
+}
+
+void decRef(tfobj *o) {
+  if (o == NULL)
+    return;
+
+  o->refcount--;
+  if (o->refcount == 0) {
+    freeObject(o);
+  }
 }
 
 /* ===================== Object related functions =================== */
@@ -121,6 +143,15 @@ tfctx *createContext() {
   ctx->stack = xmalloc(sizeof(tfobj *) * ctx->capacity);
 
   return ctx;
+}
+
+void freeContext(tfctx *ctx) {
+  // decRef all the objects still on the stack
+  for (size_t i = 0; i < ctx->sp; i++) {
+    decRef(ctx->stack[i]);
+  }
+  free(ctx->stack);
+  free(ctx);
 }
 
 /* ===================== Stack Manipulation =================== */
