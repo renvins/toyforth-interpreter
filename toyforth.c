@@ -1,7 +1,7 @@
 #include <ctype.h>
-#include <libc.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define TFOBJ_TYPE_INT 0
 #define TFOBJ_TYPE_STR 1
@@ -41,7 +41,7 @@ typedef struct tfctx {
   size_t capacity; // the maximum capacity of the stack
 } tfctx;
 
-/* ===================== Allocation wrappers =================== */
+/* ===================== De/Allocation wrappers =================== */
 
 void *xmalloc(size_t size) {
   void *ptr = malloc(size);
@@ -50,6 +50,22 @@ void *xmalloc(size_t size) {
     exit(1);
   }
   return ptr;
+}
+
+void freeObject(tfobj *o) {
+  if (o == NULL) {
+    return;
+  }
+
+  if (o->type == TFOBJ_TYPE_STR || o->type == TFOBJ_TYPE_SYMBOL) {
+    free(o->str.ptr);
+  } else if (o->type == TFOBJ_TYPE_LIST) {
+    for (int i = 0; i < o->list.len; i++) {
+      freeObject(o->list.ele[i]);
+    }
+    free(o->list.ele);
+  }
+  free(o);
 }
 
 /* ===================== Object related functions =================== */
@@ -165,8 +181,8 @@ char *readFile(const char *filename) {
 
 /* ===================== Primitives Operations =================== */
 void primitiveAdd(tfctx *ctx) {
-  if ((ctx->capacity - ctx->sp) < 2) {
-    fprintf(stderr, "Not enough values in the stack!\n");
+  if (ctx->sp < 2) {
+    fprintf(stderr, "Stack underflow: '+' requires two values!\n");
     exit(1);
   }
   tfobj *first = stackPop(ctx);
@@ -183,8 +199,8 @@ void primitiveAdd(tfctx *ctx) {
 }
 
 void primitivePrint(tfctx *ctx) {
-  if ((ctx->capacity - ctx->sp) < 1) {
-    fprintf(stderr, "Not enough values in the stack \n");
+  if (ctx->sp < 1) {
+    fprintf(stderr, "Stack underflow: '.' requires a value!\n");
     exit(1);
   }
   tfobj *val = stackPop(ctx);
@@ -233,18 +249,18 @@ tfobj *parseObject(tfparser *p) {
 /* This function creates a parsers and a list of tfobject
  * to make them readable and executable by execute function */
 tfobj *compile(char *progtxt) {
-  tfparser *pstorage = xmalloc(sizeof(tfparser));
-  pstorage->prg = progtxt;
-  pstorage->p = progtxt; // p is the moving pointer
+  tfparser pstorage;
+  pstorage.prg = progtxt;
+  pstorage.p = progtxt;
 
   tfobj *program_list = createListObject(16);
 
-  while (*(pstorage->p) != '\0') {
-    skipWhitespace(pstorage);
-    if (*pstorage->p == '\0')
+  while (*(pstorage.p) != '\0') {
+    skipWhitespace(&pstorage);
+    if (*pstorage.p == '\0')
       break;
 
-    tfobj *o = parseObject(pstorage);
+    tfobj *o = parseObject(&pstorage);
     if (o) {
       listAppendObject(program_list, o);
     }
