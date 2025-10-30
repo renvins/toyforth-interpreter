@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* ===================== Data types =================== */
+
 #define TFOBJ_TYPE_INT 0
 #define TFOBJ_TYPE_STR 1
 #define TFOBJ_TYPE_BOOL 2
@@ -31,8 +33,7 @@ typedef struct tfobj {
 } tfobj;
 
 typedef struct tfparser {
-  char *prg; // the program to compile into a list
-  char *p;   // next token to parse
+  char *p; // pointer to program
 } tfparser;
 
 typedef struct tfctx {
@@ -161,6 +162,7 @@ void stackPush(tfctx *ctx, tfobj *o) {
     ctx->capacity = ctx->capacity * 2;
     ctx->stack = realloc(ctx->stack, sizeof(tfobj *) * ctx->capacity);
   }
+  incRef(o);
   ctx->stack[ctx->sp] = o;
   ctx->sp++;
 }
@@ -172,6 +174,9 @@ tfobj *stackPop(tfctx *ctx) {
   }
   ctx->sp--;
   tfobj *popped_item = ctx->stack[ctx->sp];
+
+  // we do not decRef here, it's responsability
+  // of the caller function.
   return popped_item;
 }
 
@@ -185,6 +190,7 @@ void listAppendObject(tfobj *list, tfobj *o) {
     list->list.ele =
         realloc(list->list.ele, sizeof(tfobj *) * list->list.capacity);
   }
+  incRef(o);
   list->list.ele[list->list.len] = o;
   list->list.len++;
 }
@@ -227,6 +233,11 @@ void primitiveAdd(tfctx *ctx) {
   tfobj *objResult = createIntObject(result);
 
   stackPush(ctx, objResult);
+
+  // We are done with our local references
+  decRef(objResult); // Our var ref is gone, ref is on stack now
+  decRef(first);
+  decRef(second);
 }
 
 void primitivePrint(tfctx *ctx) {
@@ -240,6 +251,7 @@ void primitivePrint(tfctx *ctx) {
     exit(1);
   }
   printf("%d\n", val->i);
+  decRef(val);
 }
 
 /* ===================== Compile & Execute =================== */
@@ -281,7 +293,6 @@ tfobj *parseObject(tfparser *p) {
  * to make them readable and executable by execute function */
 tfobj *compile(char *progtxt) {
   tfparser pstorage;
-  pstorage.prg = progtxt;
   pstorage.p = progtxt;
 
   tfobj *program_list = createListObject(16);
@@ -294,6 +305,7 @@ tfobj *compile(char *progtxt) {
     tfobj *o = parseObject(&pstorage);
     if (o) {
       listAppendObject(program_list, o);
+      decRef(o);
     }
   }
   return program_list;
@@ -332,5 +344,10 @@ int main(int argc, char **argv) {
 
   tfobj *program = compile(progtxt);
   exec(ctx, program);
+
+  decRef(program);
+  freeContext(ctx);
+  free(progtxt);
+
   return 0;
 }
