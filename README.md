@@ -1,16 +1,23 @@
-# ToyForth Interpreter
+# ToyForth Interpreter in C
 
-This is a simple, stack-based interpreter for a mini Forth-like language, written in C. It reads a program from a file, parses it into a list of objects (integers and symbols), and then executes them.
+A minimal, clean interpreter for a Forth-like language, written in C from scratch. This project was built for fun and is a perfect starter kit for learning about or building your own programming language.
 
-## Features
+## Project Philosophy
 
-  * **Stack-Based VM**: Operations work by manipulating a central data stack.
-  * **Object System**: Supports basic object types including integers, symbols, booleans, and lists.
-  * **Parser**: Includes a simple parser that reads space-separated tokens from a file. It can parse integers and symbols.
-  * **File Execution**: The interpreter reads and executes code from a specified source file.
-  * **Primitives**: Implements a small set of core operations:
-      * `+` : Pops two integers from the stack, adds them, and pushes the result.
-      * `.` : Pops one integer from the stack and prints it to the console, followed by a newline.
+This is a "toy" interpreter built for fun and learning. Its main goal is to be a small, understandable example of how an interpreter works, from parsing text to managing memory.
+
+It is designed to be a clean, solid foundation for anyone who wants to experiment with building their own language. Because it's small, it's easy to read, modify, and extend.
+
+## How it Works (A High-Level View)
+
+The interpreter is broken down into a few simple parts:
+
+1.  **File Reader (`readFile`)**: First, the `.tf` source file is read into a single string.
+2.  **Parser (`compile`)**: A simple parser walks the string and turns it into a `list` of objects. It can create `integer` objects (like `10`) and `symbol` objects (like `+`).
+3.  **VM (`exec`)**: A tiny stack-based virtual machine loops over the list of objects.
+      * If it sees data (an integer), it pushes it onto the stack.
+      * If it sees a symbol, it looks for a matching primitive (a C function) and executes it.
+4.  **Memory (`incRef`/`decRef`)**: All objects (`tfobj`) are managed by a simple reference counting system. This prevents memory leaks and is a core concept in many high-level languages.
 
 ## How to Build
 
