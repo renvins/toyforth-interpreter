@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,8 @@
 
 /* ===================== Data structures =================== */
 
+/* ToyForth object: it's the base object used for 
+*  all the operations in our interpreter. */
 typedef struct tfobj {
   int refcount;
   int type; // TFOBJ_TYPE_*
@@ -33,6 +36,7 @@ typedef struct tfobj {
 } tfobj;
 
 typedef struct tfparser {
+  char *prg; // pointer to start of the program
   char *p; // pointer to program
 } tfparser;
 
@@ -48,8 +52,49 @@ typedef struct tfctx {
 void freeObject(tfobj *o);
 void decRef(tfobj *o);
 
+/* Defining primitives */
+void primitiveAdd(tfctx *ctx);
+void primitivePrint(tfctx *ctx);
+void primitiveDuplicate(tfctx *ctx);
+
+/* ===================== Mappings =================== */
+/* This mapping runs in a linear time execution O(n).
+ * We use an array just because we only have a few primitives 
+ * and it's ok for our idea. */
+
+/* Function pointer that takes as an argument the runtime context
+ * used to map correctly a primitive to its function */
+typedef void (*WordFn)(tfctx *ctx);
+
+/* Little struct to map a name to a function */
+typedef struct PrimEntry {
+   char *name;
+   WordFn fn;
+} PrimEntry;
+ 
+ /* Mappings table */
+const PrimEntry primitivesTable[] = {
+ {"+", primitiveAdd},
+ {".", primitivePrint},
+ {"dup", primitiveDuplicate},
+ {NULL, NULL}, // Used just as a sentinel
+};
+
+/* Search inside the table the inserted primitive
+ * to get the function that executes it. 
+ *
+ * It runs in linear time -> O(n) */
+WordFn lookupMapping(const char *name) {
+  for (int i = 0; primitivesTable[i].name != NULL; i++) {
+    if (strcmp(name, primitivesTable[i].name) == 0) return primitivesTable[i].fn;
+  }
+  return NULL;
+}
+
 /* ===================== De/Allocation wrappers =================== */
 
+/* Returns a pointer to the start of allocated memory
+and it automatically handles the out of memory error */
 void *xmalloc(size_t size) {
   void *ptr = malloc(size);
   if (ptr == NULL) {
@@ -167,6 +212,8 @@ void stackPush(tfctx *ctx, tfobj *o) {
   ctx->sp++;
 }
 
+/* Returns the top pointer without touching its refcount; 
+*  caller retains responsibility for the returned object's refcount. */
 tfobj *stackPop(tfctx *ctx) {
   if (ctx->sp == 0) {
     fprintf(stderr, "Stack underflow error!");
@@ -175,8 +222,6 @@ tfobj *stackPop(tfctx *ctx) {
   ctx->sp--;
   tfobj *popped_item = ctx->stack[ctx->sp];
 
-  // we do not decRef here, it's responsability
-  // of the caller function.
   return popped_item;
 }
 
@@ -254,6 +299,19 @@ void primitivePrint(tfctx *ctx) {
   decRef(val);
 }
 
+void primitiveDuplicate(tfctx *ctx) {
+  if (ctx->sp < 1) {
+    fprintf(stderr, "Stack underflow: '.' requires a value!\n");
+    exit(1);
+  }
+  tfobj *val = ctx->stack[ctx->sp - 1];
+  if (val->type != TFOBJ_TYPE_INT) {
+    fprintf(stderr, "Can't print a symbol\n");
+    exit(1);
+  }
+  stackPush(ctx, val);
+}
+
 /* ===================== Compile & Execute =================== */
 
 void skipWhitespace(tfparser *p) {
@@ -317,16 +375,16 @@ void exec(tfctx *ctx, tfobj *program) {
     switch (o->type) {
     case TFOBJ_TYPE_INT:
     case TFOBJ_TYPE_BOOL:
-      // It's just data so we can
-      // push it to the stack
       stackPush(ctx, o);
       break;
     case TFOBJ_TYPE_SYMBOL:
-      if (strcmp(o->str.ptr, "+") == 0) {
-        primitiveAdd(ctx);
-      } else if (strcmp(o->str.ptr, ".") == 0) {
-        primitivePrint(ctx);
+      WordFn fn = lookupMapping(o->str.ptr);
+      if (!fn) {
+        fprintf(stderr, "The primitive %s was not found!\n", o->str.ptr);
+        exit(1);
+        break;
       }
+      fn(ctx);
       break;
     }
   }
