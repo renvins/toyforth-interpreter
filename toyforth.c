@@ -87,7 +87,7 @@ const PrimitiveEntry primitiveMappings[] = {
 /* Function used to lookup for the inserted primitive
  * and execute it directly. Returns NULL if not found. */
 WordFn lookupPrimitive(const char *name) {
-  for (int i = 0; primitiveMappings[i].name != NULL; i++) {
+  for (size_t i = 0; primitiveMappings[i].name != NULL; i++) {
     if (strcmp(name, primitiveMappings[i].name) == 0) return primitiveMappings[i].fn;
   }
   return NULL;
@@ -100,7 +100,18 @@ and it automatically handles the out of memory error */
 void *xmalloc(size_t size) {
   void *ptr = malloc(size);
   if (ptr == NULL) {
-    fprintf(stderr, "Out of memory allocationg %zu bytes\n", size);
+    fprintf(stderr, "Out of memory allocating %zu bytes\n", size);
+    exit(1);
+  }
+  return ptr;
+}
+
+/* Returns a pointer to the start of reallocated memory
+and it automatically handles the out of memory error */
+void *xrealloc(void *ptr, size_t size) {
+  ptr = realloc(ptr, size);
+  if (ptr == NULL) {
+    fprintf(stderr, "Out of memory reallocating %zu bytes\n", size);
     exit(1);
   }
   return ptr;
@@ -114,7 +125,7 @@ void freeObject(tfobj *o) {
   if (o->type == TFOBJ_TYPE_STR || o->type == TFOBJ_TYPE_SYMBOL) {
     free(o->str.ptr);
   } else if (o->type == TFOBJ_TYPE_LIST) {
-    for (int i = 0; i < o->list.len; i++) {
+    for (size_t i = 0; i < o->list.len; i++) {
       decRef(o->list.ele[i]);
     }
     free(o->list.ele);
@@ -207,7 +218,7 @@ void freeContext(tfctx *ctx) {
 void stackPush(tfctx *ctx, tfobj *o) {
   if (ctx->sp >= ctx->capacity) {
     ctx->capacity = ctx->capacity * 2;
-    ctx->stack = realloc(ctx->stack, sizeof(tfobj *) * ctx->capacity);
+    ctx->stack = xrealloc(ctx->stack, sizeof(tfobj *) * ctx->capacity);
   }
   incRef(o);
   ctx->stack[ctx->sp] = o;
@@ -234,8 +245,7 @@ tfobj *stackPop(tfctx *ctx) {
 void listAppendObject(tfobj *list, tfobj *o) {
   if (list->list.len >= list->list.capacity) {
     list->list.capacity = list->list.capacity * 2;
-    list->list.ele =
-        realloc(list->list.ele, sizeof(tfobj *) * list->list.capacity);
+    list->list.ele = xrealloc(list->list.ele, sizeof(tfobj *) * list->list.capacity);
   }
   incRef(o);
   list->list.ele[list->list.len] = o;
@@ -260,6 +270,8 @@ char *readFile(const char *filename) {
   fread(buffer, sizeof(char), size, file);
 
   buffer[size] = '\0';
+  fclose(file);
+
   return buffer;
 }
 
@@ -303,14 +315,10 @@ void primitivePrint(tfctx *ctx) {
 
 void primitiveDuplicate(tfctx *ctx) {
   if (ctx->sp < 1) {
-    fprintf(stderr, "Stack underflow: '.' requires a value!\n");
+    fprintf(stderr, "Stack underflow: 'dup' requires a value!\n");
     exit(1);
   }
   tfobj *val = ctx->stack[ctx->sp - 1];
-  if (val->type != TFOBJ_TYPE_INT) {
-    fprintf(stderr, "Can't print a symbol\n");
-    exit(1);
-  }
   stackPush(ctx, val);
 }
 
@@ -372,7 +380,7 @@ tfobj *compile(char *progtxt) {
 }
 
 void exec(tfctx *ctx, tfobj *program) {
-  for (int i = 0; i < program->list.len; i++) {
+  for (size_t i = 0; i < program->list.len; i++) {
     tfobj *o = program->list.ele[i];
     switch (o->type) {
     case TFOBJ_TYPE_INT:
@@ -387,6 +395,9 @@ void exec(tfctx *ctx, tfobj *program) {
       WordFn fn = lookupPrimitive(o->str.ptr);
       fn(ctx);
       break;
+    default:
+      fprintf(stderr, "Found an unknown keyword while executing the program!\n");
+      break;
     }
   }
 }
@@ -399,7 +410,6 @@ int main(int argc, char **argv) {
   tfctx *ctx = createContext();
 
   char *progtxt = readFile(argv[1]);
-  printf("This is the file i've read: %s", progtxt);
 
   tfobj *program = compile(progtxt);
   exec(ctx, program);
