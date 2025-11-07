@@ -1,5 +1,4 @@
 #include <ctype.h>
-#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,41 +51,44 @@ typedef struct tfctx {
 void freeObject(tfobj *o);
 void decRef(tfobj *o);
 
-/* Defining primitives */
+/* Declare primitives functions */
 void primitiveAdd(tfctx *ctx);
 void primitivePrint(tfctx *ctx);
 void primitiveDuplicate(tfctx *ctx);
 
 /* ===================== Mappings =================== */
-/* This mapping runs in a linear time execution O(n).
- * We use an array just because we only have a few primitives 
- * and it's ok for our idea. */
+/* Here there will be the structs and table of mappings
+ * for the primitives, to handle in an efficient way
+ * the execute function, without have to switch through
+ * every possible primitive manually.
+ 
+ * A table will be used and the mapping search will run
+ * in O(n) because we will only have dozens of primitives
+ * therefore this time complexity will be perfectly fine. */
 
-/* Function pointer that takes as an argument the runtime context
- * used to map correctly a primitive to its function */
+/* We define a function pointer because primitive
+ * functions will all have the same structure.
+ * The context is the running environment context */
 typedef void (*WordFn)(tfctx *ctx);
 
-/* Little struct to map a name to a function */
-typedef struct PrimEntry {
-   char *name;
-   WordFn fn;
-} PrimEntry;
- 
- /* Mappings table */
-const PrimEntry primitivesTable[] = {
- {"+", primitiveAdd},
- {".", primitivePrint},
- {"dup", primitiveDuplicate},
- {NULL, NULL}, // Used just as a sentinel
+/* Struct that will work as a dictionary */
+typedef struct PrimitiveEntry {
+  char *name;
+  WordFn fn;
+} PrimitiveEntry;
+
+const PrimitiveEntry primitiveMappings[] = {
+  {"+", primitiveAdd},
+  {".", primitivePrint},
+  {"dup", primitiveDuplicate},
+  {NULL, NULL} // Just for sentinel
 };
 
-/* Search inside the table the inserted primitive
- * to get the function that executes it. 
- *
- * It runs in linear time -> O(n) */
-WordFn lookupMapping(const char *name) {
-  for (int i = 0; primitivesTable[i].name != NULL; i++) {
-    if (strcmp(name, primitivesTable[i].name) == 0) return primitivesTable[i].fn;
+/* Function used to lookup for the inserted primitive
+ * and execute it directly. Returns NULL if not found. */
+WordFn lookupPrimitive(const char *name) {
+  for (int i = 0; primitiveMappings[i].name != NULL; i++) {
+    if (strcmp(name, primitiveMappings[i].name) == 0) return primitiveMappings[i].fn;
   }
   return NULL;
 }
@@ -375,15 +377,14 @@ void exec(tfctx *ctx, tfobj *program) {
     switch (o->type) {
     case TFOBJ_TYPE_INT:
     case TFOBJ_TYPE_BOOL:
+      // It's just data so we can
+      // push it to the stack
       stackPush(ctx, o);
       break;
     case TFOBJ_TYPE_SYMBOL:
-      WordFn fn = lookupMapping(o->str.ptr);
-      if (!fn) {
-        fprintf(stderr, "The primitive %s was not found!\n", o->str.ptr);
-        exit(1);
-        break;
-      }
+      /* We lookup the primitives' table to execute
+       * the correct symbol's function */
+      WordFn fn = lookupPrimitive(o->str.ptr);
       fn(ctx);
       break;
     }
