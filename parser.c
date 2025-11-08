@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "parser.h"
 #include "tf.h"
 #include "mem.h"
 #include "list.h"

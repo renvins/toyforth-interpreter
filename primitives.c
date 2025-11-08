@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "primitives.h"
 #include "tf.h"
 #include "mem.h"
 #include "stack.h"
