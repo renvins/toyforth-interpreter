@@ -20,7 +20,7 @@ static void skipWhitespace(tfparser *p) {
  * a number and a symbol */
 static tfobj *parseObject(tfparser *p) {
     char c = *p->p;
-    if (isdigit(c) || (c == '-') && isdigit(*(p->p + 1))) {
+    if ((isdigit(c) || (c == '-')) && isdigit(*(p->p + 1))) {
       char *end_ptr;
       // strtol converts string to long, last arg is base
       // end_ptr moves to the next of last digit

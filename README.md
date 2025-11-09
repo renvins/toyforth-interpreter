@@ -19,41 +19,90 @@ The interpreter is broken down into a few simple parts:
       * If it sees a symbol, it looks for a matching primitive (a C function) and executes it.
 4.  **Memory (`incRef`/`decRef`)**: All objects (`tfobj`) are managed by a simple reference counting system. This prevents memory leaks and is a core concept in many high-level languages.
 
+## Project Structure
+
+The project is organized into modular components:
+
+- `main.c` - Entry point, file reader, and VM execution loop
+- `parser.c/h` - Tokenizes and compiles source text into objects
+- `mem.c/h` - Memory management (reference counting) and object creation
+- `stack.c/h` - Stack operations (push/pop)
+- `list.c/h` - Dynamic list manipulation
+- `dict.c/h` - Primitive word lookup table
+- `primitives.c/h` - Implementation of built-in words
+- `tf.h` - Core type definitions
+
 ## How to Build
 
-Compile the `toyforth.c` file using a C compiler like `gcc`:
+Use the provided Makefile:
 
 ```bash
-gcc toyforth.c -o toyforth
+make            # builds the 'toyforth' binary
+make -j         # parallel build (faster)
+make clean      # removes objects and binary
 ```
+
+You can override compiler flags if needed:
+
+```bash
+make CFLAGS="-std=c11 -Wall -Wextra -O2"
+```
+
+The Makefile uses incremental compilation, so it only rebuilds changed files.
 
 ## How to Run
 
-Execute the compiled program by passing it the path to a ToyForth source file (`.tf`) as a command-line argument.
+Execute the compiled program by passing it the path to a ToyForth source file (`.tf`):
 
 ```bash
 ./toyforth path/to/your/program.tf
 ```
 
-### Example
+Or use the convenience target to run the test file:
 
-The provided `test.tf` file contains the following code:
-
-```forth
-10 20 + .
+```bash
+make run
 ```
 
-Running this file will:
+## Available Words
 
-1.  Push `10` onto the stack.
-2.  Push `20` onto the stack.
-3.  Execute `+`, popping `20` and `10`, adding them (10 + 20 = 30), and pushing the result `30` back onto the stack.
-4.  Execute `.`, popping `30` and printing it to the console.
+ToyForth currently includes these built-in primitives:
+
+- **`+`** - Add two integers (`a b -- sum`)
+- **`-`** - Subtract two integers (`a b -- a-b`)
+- **`.`** - Pop and print the top integer
+- **`dup`** - Duplicate the top value (`a -- a a`)
+- **`drop`** - Discard the top value (`a -- `)
+- **`swap`** - Swap the top two values (`a b -- b a`)
+
+## Example
+
+The provided `tests/test.tf` file demonstrates several primitives:
+
+```forth
+10 20 dup + . 30 40 + . 20 30 - . 40 50 swap - .
+```
+
+**Step-by-step execution:**
+
+1. `10 20 dup +` → Stack: `[30]` (10 + 20 after dup)
+2. `.` → Prints `40` (actually 20 + 20 from dup)
+3. `30 40 +` → Stack: `[70]`
+4. `.` → Prints `70`
+5. `20 30 -` → Stack: `[-10]` (20 - 30)
+6. `.` → Prints `-10`
+7. `40 50 swap -` → Stack: `[10]` (50 - 40 after swap)
+8. `.` → Prints `10`
 
 **Output:**
 
 ```bash
-$ ./toyforth test.tf
-This is the file i've read: 10 20 + .
-30
+$ make run
+40
+70
+-10
+10
 ```
+
+## Special Thanks
+I want to thank @antirez for the idea of the project and for what he's done for the OSS community!
