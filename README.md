@@ -105,4 +105,4 @@ $ make run
 ```
 
 ## Special Thanks
-I want to thank @antirez for the idea of the project and for what he's done for the OSS community!
+I want to thank [@antirez](https://github.com/antirez) for the idea of the project and for what he's done for the OSS community!
