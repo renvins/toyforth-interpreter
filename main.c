@@ -42,7 +42,7 @@ void exec(tfctx *ctx, tfobj *program) {
       // push it to the stack
       stackPush(ctx, o);
       break;
-    case TFOBJ_TYPE_SYMBOL:
+    case TFOBJ_TYPE_SYMBOL: {
       /* We lookup the primitives' table to execute
        * the correct symbol's function */
       WordFn fn = lookupPrimitive(o->str.ptr);
@@ -52,6 +52,7 @@ void exec(tfctx *ctx, tfobj *program) {
       }
       fn(ctx);
       break;
+    }
     default:
       fprintf(stderr, "Found an unknown keyword while executing the program!\n");
       break;

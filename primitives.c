@@ -29,8 +29,49 @@ void primitiveAdd(tfctx *ctx) {
     decRef(objResult); // Our var ref is gone, ref is on stack now
     decRef(first);
     decRef(second);
+}
+
+void primitiveSub(tfctx *ctx) {
+  if (ctx->sp < 2) {
+    fprintf(stderr, "Stack underflow: '-' requires two values!\n");
+    exit(1);
   }
+  tfobj *a = stackPop(ctx);
+  tfobj *b = stackPop(ctx);
+  if (a->type != TFOBJ_TYPE_INT || b->type != TFOBJ_TYPE_INT) {
+    fprintf(stderr, "The subtraction requires two integers\n");
+    exit(1);
+  }
+  int result = (b->i) - (a->i);
+  tfobj *resObject = createIntObject(result);
   
+  stackPush(ctx, resObject);
+  decRef(resObject);
+  decRef(a);
+  decRef(b);
+}
+
+void primitiveDrop(tfctx *ctx) {
+  if (ctx->sp < 1) {
+    fprintf(stderr, "Stack underflow: 'drop' requires one value!\n");
+    exit(1);
+  }
+  tfobj *popped = stackPop(ctx);
+  decRef(popped);
+}
+
+void primitiveSwap(tfctx *ctx) {
+  if (ctx->sp < 2) {
+    fprintf(stderr, "Stack underflow: 'swap' requires two values!\n");
+    exit(1);
+  }
+  tfobj *a = ctx->stack[ctx->sp - 1];
+  tfobj *b = ctx->stack[ctx->sp - 2];
+
+  ctx->stack[ctx->sp - 1] = b;
+  ctx->stack[ctx->sp - 2] = a;
+}
+
 void primitivePrint(tfctx *ctx) {
     if (ctx->sp < 1) {
         fprintf(stderr, "Stack underflow: '.' requires a value!\n");

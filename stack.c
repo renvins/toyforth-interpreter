@@ -18,7 +18,7 @@ void stackPush(tfctx *ctx, tfobj *o) {
   }
   
 /* Returns the top pointer without touching its refcount; 
-*  caller retains responsibility for the returned object's refcount. */
+ * caller retains responsibility for the returned object's refcount. */
 tfobj *stackPop(tfctx *ctx) {
 if (ctx->sp == 0) {
     fprintf(stderr, "Stack underflow error!");

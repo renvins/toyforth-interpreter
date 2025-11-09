@@ -21,8 +21,11 @@ typedef struct PrimitiveEntry {
 
 static const PrimitiveEntry primitiveMappings[] = {
 {"+", primitiveAdd},
+{"-", primitiveSub},
 {".", primitivePrint},
 {"dup", primitiveDuplicate},
+{"drop", primitiveDrop},
+{"swap", primitiveSwap},
 {NULL, NULL} // Just for sentinel
 };
 
