@@ -35,27 +35,29 @@ static char *readFile(const char *filename) {
 void exec(tfctx *ctx, tfobj *program) {
   for (size_t i = 0; i < program->list.len; i++) {
     tfobj *o = program->list.ele[i];
+    ctx->current_object = o;
     switch (o->type) {
-    case TFOBJ_TYPE_INT:
-    case TFOBJ_TYPE_BOOL:
-      // It's just data so we can
-      // push it to the stack
-      stackPush(ctx, o);
-      break;
-    case TFOBJ_TYPE_SYMBOL: {
-      /* We lookup the primitives' table to execute
-       * the correct symbol's function */
-      WordFn fn = lookupPrimitive(o->str.ptr);
-      if (!fn) {
-        fprintf(stderr, "A primitive with this symbol does not exists!\n");
-        exit(1);
+      case TFOBJ_TYPE_INT:
+      case TFOBJ_TYPE_BOOL:
+        // It's just data so we can
+        // push it to the stack
+        stackPush(ctx, o);
+        break;
+      case TFOBJ_TYPE_SYMBOL: {
+        /* We lookup the primitives' table to execute
+        * the correct symbol's function */
+        WordFn fn = lookupPrimitive(o->str.ptr);
+        if (!fn) {
+          char error_msg[256];
+          snprintf(error_msg, sizeof(error_msg), "Unknown word '%s'", o->str.ptr);
+          runtimeError(ctx, error_msg);
+        }
+        fn(ctx);
+        break;
       }
-      fn(ctx);
-      break;
-    }
-    default:
-      fprintf(stderr, "Found an unknown keyword while executing the program!\n");
-      break;
+      default:
+        runtimeError(ctx,"Found an unknown keyword while executing the program!");
+        break;
     }
   }
 }

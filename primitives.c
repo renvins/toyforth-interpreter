@@ -10,15 +10,13 @@
 
 void primitiveAdd(tfctx *ctx) {
     if (ctx->sp < 2) {
-      fprintf(stderr, "Stack underflow: '+' requires two values!\n");
-      exit(1);
+      runtimeError(ctx, "Stack underflow: '+' requires two values!");
     }
     tfobj *first = stackPop(ctx);
     tfobj *second = stackPop(ctx);
   
     if (first->type != TFOBJ_TYPE_INT || second->type != TFOBJ_TYPE_INT) {
-      fprintf(stderr, "The addition requires two integers\n");
-      exit(1);
+      runtimeError(ctx,"The addition requires two integers");
     }
     int result = first->i + second->i;
     tfobj *objResult = createIntObject(result);
@@ -33,14 +31,12 @@ void primitiveAdd(tfctx *ctx) {
 
 void primitiveSub(tfctx *ctx) {
   if (ctx->sp < 2) {
-    fprintf(stderr, "Stack underflow: '-' requires two values!\n");
-    exit(1);
+    runtimeError(ctx, "Stack underflow: '-' requires two values!");
   }
   tfobj *a = stackPop(ctx);
   tfobj *b = stackPop(ctx);
   if (a->type != TFOBJ_TYPE_INT || b->type != TFOBJ_TYPE_INT) {
-    fprintf(stderr, "The subtraction requires two integers\n");
-    exit(1);
+    runtimeError(ctx,"The subtraction requires two integers");
   }
   int result = (b->i) - (a->i);
   tfobj *resObject = createIntObject(result);
@@ -53,8 +49,7 @@ void primitiveSub(tfctx *ctx) {
 
 void primitiveDrop(tfctx *ctx) {
   if (ctx->sp < 1) {
-    fprintf(stderr, "Stack underflow: 'drop' requires one value!\n");
-    exit(1);
+    runtimeError(ctx, "Stack underflow: 'drop' requires one value!");
   }
   tfobj *popped = stackPop(ctx);
   decRef(popped);
@@ -62,8 +57,7 @@ void primitiveDrop(tfctx *ctx) {
 
 void primitiveSwap(tfctx *ctx) {
   if (ctx->sp < 2) {
-    fprintf(stderr, "Stack underflow: 'swap' requires two values!\n");
-    exit(1);
+    runtimeError(ctx,"Stack underflow: 'swap' requires two values!");
   }
   tfobj *a = ctx->stack[ctx->sp - 1];
   tfobj *b = ctx->stack[ctx->sp - 2];
@@ -73,23 +67,20 @@ void primitiveSwap(tfctx *ctx) {
 }
 
 void primitivePrint(tfctx *ctx) {
-    if (ctx->sp < 1) {
-        fprintf(stderr, "Stack underflow: '.' requires a value!\n");
-        exit(1);
-    }
-    tfobj *val = stackPop(ctx);
-    if (val->type != TFOBJ_TYPE_INT) {
-        fprintf(stderr, "Can't print a symbol\n");
-        exit(1);
-    }
-    printf("%d\n", val->i);
-    decRef(val);
+  if (ctx->sp < 1) {
+      runtimeError(ctx,"Stack underflow: '.' requires a value!");
+  }
+  tfobj *val = stackPop(ctx);
+  if (val->type != TFOBJ_TYPE_INT) {
+      runtimeError(ctx, "Can't print a symbol!");
+  }
+  printf("%d\n", val->i);
+  decRef(val);
 }
 
 void primitiveDuplicate(tfctx *ctx) {
     if (ctx->sp < 1) {
-        fprintf(stderr, "Stack underflow: 'dup' requires a value!\n");
-        exit(1);
+        runtimeError(ctx,"Stack underflow: 'dup' requires a value!");
     }
     tfobj *val = ctx->stack[ctx->sp - 1];
     stackPush(ctx, val);

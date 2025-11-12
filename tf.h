@@ -20,6 +20,8 @@
 typedef struct tfobj {
   int refcount;
   int type; // TFOBJ_TYPE_*
+  int src_line;
+  int src_column;
   union {
     int i;
     struct {
@@ -38,6 +40,8 @@ typedef struct tfobj {
 typedef struct tfparser {
   char *prg; // pointer to start of the program
   char *p; // pointer to program
+  int line; // current line
+  int column; // current column
 } tfparser;
 
 /* Context of the running environment. We used a stack
@@ -46,6 +50,7 @@ typedef struct tfctx {
   tfobj **stack;
   size_t sp;       // index of next free slot
   size_t capacity; // the maximum capacity of the stack
+  tfobj *current_object; // Track current executing object
 } tfctx;
 
 #endif

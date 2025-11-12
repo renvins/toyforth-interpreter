@@ -69,6 +69,8 @@ static tfobj *createObject(int type) {
     tfobj *o = xmalloc(sizeof(tfobj));
     o->type = type;
     o->refcount = 1;
+    o->src_line = 0;
+    o->src_column = 0;
     return o;
 }
   
@@ -106,13 +108,14 @@ tfobj *createListObject(size_t capacity) {
     return o;
 }
   
-  /* Creates the needed context (stack) for the environment */
+/* Creates the needed context (stack) for the environment */
 tfctx *createContext() {
     tfctx *ctx = xmalloc(sizeof(tfctx));
 
     ctx->sp = 0;
     ctx->capacity = INITIAL_STACK_CAPACITY;
     ctx->stack = xmalloc(sizeof(tfobj *) * ctx->capacity);
+    ctx->current_object = NULL;
 
     return ctx;
 }
@@ -125,4 +128,16 @@ void freeContext(tfctx *ctx) {
     }
     free(ctx->stack);
     free(ctx);
+}
+
+void runtimeError(tfctx *ctx, const char *msg) {
+    fprintf(stderr, "Runtime error");
+    if (ctx->current_object && ctx->current_object->src_line > 0) {
+        fprintf(stderr, " at line %d, column %d",
+            ctx->current_object->src_line,
+            ctx->current_object->src_column);
+    }
+    fprintf(stderr, ": %s\n", msg);
+    fprintf(stderr, "Stack depth: %zu\n", ctx->sp);
+    exit(1);
 }

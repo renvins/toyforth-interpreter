@@ -17,4 +17,6 @@ tfobj *createListObject(size_t capacity);
 
 tfctx *createContext(void);
 void freeContext(tfctx *ctx);
+
+void runtimeError(tfctx *ctx, const char *msg);
 #endif

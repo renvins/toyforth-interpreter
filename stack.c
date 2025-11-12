@@ -15,17 +15,16 @@ void stackPush(tfctx *ctx, tfobj *o) {
     incRef(o);
     ctx->stack[ctx->sp] = o;
     ctx->sp++;
-  }
+}
   
 /* Returns the top pointer without touching its refcount; 
  * caller retains responsibility for the returned object's refcount. */
 tfobj *stackPop(tfctx *ctx) {
-if (ctx->sp == 0) {
-    fprintf(stderr, "Stack underflow error!");
-    exit(1);
-}
-ctx->sp--;
-tfobj *popped_item = ctx->stack[ctx->sp];
+  if (ctx->sp == 0) {
+    runtimeError(ctx, "Stack underflow error!");
+  }
+  ctx->sp--;
+  tfobj *popped_item = ctx->stack[ctx->sp];
 
-return popped_item;
+  return popped_item;
 }
