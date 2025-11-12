@@ -1,3 +1,11 @@
+/**
+ * @file stack.c
+ * @brief Implementation of stack operations for the VM
+ *
+ * Provides push and pop operations with automatic stack growth and
+ * proper reference count management.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,9 +24,7 @@ void stackPush(tfctx *ctx, tfobj *o) {
     ctx->stack[ctx->sp] = o;
     ctx->sp++;
 }
-  
-/* Returns the top pointer without touching its refcount; 
- * caller retains responsibility for the returned object's refcount. */
+
 tfobj *stackPop(tfctx *ctx) {
   if (ctx->sp == 0) {
     runtimeError(ctx, "Stack underflow error!");

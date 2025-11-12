@@ -1,24 +1,39 @@
+/**
+ * @file dict.c
+ * @brief Implementation of the primitive dictionary
+ *
+ * Maps symbol names to their C implementation functions. Uses a simple
+ * linear search table, which is efficient enough for the small number
+ * of primitives typically defined.
+ */
+
 #include <string.h>
 
 #include "dict.h"
 #include "primitives.h"
 
-/* ===================== Mappings =================== */
-/* Here there will be the structs and table of mappings
- * for the primitives, to handle in an efficient way
- * the execute function, without have to switch through
- * every possible primitive manually.
- 
- * A table will be used and the mapping search will run
- * in O(n) because we will only have dozens of primitives
- * therefore this time complexity will be perfectly fine. */
+/* ===================== Primitive Dictionary =================== */
 
-/* Struct that will work as a dictionary */
+/**
+ * @brief Internal structure mapping a name to a function
+ *
+ * Each entry in the primitive table maps a symbol name (like "+")
+ * to its implementation function.
+ */
 typedef struct PrimitiveEntry {
-    char *name;
+    const char *name;
     WordFn fn;
 } PrimitiveEntry;
 
+/**
+ * @brief Table of all built-in primitives
+ *
+ * This table maps symbol names to their implementation functions.
+ * To add a new primitive: add an entry here, implement the function
+ * in primitives.c, and declare it in primitives.h.
+ *
+ * The table is terminated with a {NULL, NULL} sentinel.
+ */
 static const PrimitiveEntry primitiveMappings[] = {
 {"+", primitiveAdd},
 {"-", primitiveSub},
@@ -26,11 +41,9 @@ static const PrimitiveEntry primitiveMappings[] = {
 {"dup", primitiveDuplicate},
 {"drop", primitiveDrop},
 {"swap", primitiveSwap},
-{NULL, NULL} // Just for sentinel
+{NULL, NULL} // Sentinel marking end of table
 };
 
-/* Function used to lookup for the inserted primitive
-* and execute it directly. Returns NULL if not found. */
 WordFn lookupPrimitive(const char *name) {
     for (size_t i = 0; primitiveMappings[i].name != NULL; i++) {
         if (strcmp(name, primitiveMappings[i].name) == 0) return primitiveMappings[i].fn;

@@ -1,3 +1,11 @@
+/**
+ * @file mem.c
+ * @brief Implementation of memory management and object lifecycle
+ *
+ * This module provides the core memory management functionality for ToyForth,
+ * including safe allocation wrappers, reference counting, and object creation.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,10 +14,16 @@
 
 /* ===================== De/Allocation wrappers =================== */
 
+/**
+ * @brief Internal helper to free an object and its resources
+ * @param o Object to free
+ *
+ * This static function is called when an object's refcount reaches 0.
+ * It frees any owned resources (strings, list elements) and then frees
+ * the object itself.
+ */
 static void freeObject(tfobj *o);
 
-/* Returns a pointer to the start of allocated memory
-and it automatically handles the out of memory error */
 void *xmalloc(size_t size) {
     void *ptr = malloc(size);
     if (ptr == NULL) {
@@ -18,9 +32,7 @@ void *xmalloc(size_t size) {
     }
     return ptr;
 }
-  
-/* Returns a pointer to the start of reallocated memory
- * and it automatically handles the out of memory error */
+
 void *xrealloc(void *ptr, size_t size) {
     ptr = realloc(ptr, size);
     if (ptr == NULL) {
@@ -62,9 +74,16 @@ static void freeObject(tfobj *o) {
     free(o);
 }
   
-  /* ===================== Object related functions =================== */
-  
-/* Allocate and init a new ToyForth object. */
+/* ===================== Object creation =================== */
+
+/**
+ * @brief Internal helper to allocate and initialize a base object
+ * @param type Object type (TFOBJ_TYPE_*)
+ * @return Newly allocated object with refcount=1
+ *
+ * This static function is used by all the createXxxObject functions to
+ * allocate and initialize the common fields of a tfobj.
+ */
 static tfobj *createObject(int type) {
     tfobj *o = xmalloc(sizeof(tfobj));
     o->type = type;
@@ -73,7 +92,7 @@ static tfobj *createObject(int type) {
     o->src_column = 0;
     return o;
 }
-  
+
 tfobj *createStringObject(char *s, size_t len) {
     tfobj *o = createObject(TFOBJ_TYPE_STR);
     o->str.ptr = s;
@@ -107,8 +126,9 @@ tfobj *createListObject(size_t capacity) {
 
     return o;
 }
-  
-/* Creates the needed context (stack) for the environment */
+
+/* ===================== Context management =================== */
+
 tfctx *createContext() {
     tfctx *ctx = xmalloc(sizeof(tfctx));
 
@@ -119,8 +139,7 @@ tfctx *createContext() {
 
     return ctx;
 }
-  
-/* Completely frees the context of running environment */
+
 void freeContext(tfctx *ctx) {
     // decRef all the objects still on the stack
     for (size_t i = 0; i < ctx->sp; i++) {

@@ -1,3 +1,13 @@
+/**
+ * @file main.c
+ * @brief Main entry point and virtual machine execution loop
+ *
+ * This module contains:
+ * - File reading utilities
+ * - The VM execution loop (exec)
+ * - Program entry point (main)
+ */
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,10 +19,17 @@
 #include "parser.h"
 #include "dict.h"
 
-/* ===================== Read file =================== */
+/* ===================== File I/O =================== */
 
-/* This function totally reads data (text) from
- * a file. It will be used to compile our data */
+/**
+ * @brief Read an entire file into a string
+ * @param filename Path to the file to read
+ * @return Null-terminated string containing file contents
+ *
+ * Reads the entire file into a dynamically allocated buffer. The caller
+ * must free() the returned string. Exits with an error if the file cannot
+ * be opened.
+ */
 static char *readFile(const char *filename) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
@@ -32,6 +49,20 @@ static char *readFile(const char *filename) {
   return buffer;
 }
 
+/* ===================== Virtual Machine =================== */
+
+/**
+ * @brief Execute a compiled program
+ * @param ctx Execution context (contains the stack)
+ * @param program List object containing the compiled program
+ *
+ * This is the main VM loop. It iterates through the program list:
+ * - Data objects (integers, booleans) are pushed onto the stack
+ * - Symbol objects are looked up in the primitive dictionary and executed
+ *
+ * The current object is tracked in ctx->current_object for error reporting.
+ * Exits with an error if an unknown symbol is encountered.
+ */
 void exec(tfctx *ctx, tfobj *program) {
   for (size_t i = 0; i < program->list.len; i++) {
     tfobj *o = program->list.ele[i];
@@ -56,12 +87,25 @@ void exec(tfctx *ctx, tfobj *program) {
         break;
       }
       default:
-        runtimeError(ctx,"Found an unknown keyword while executing the program!");
+        runtimeError(ctx, "Found an unknown keyword while executing the program");
         break;
     }
   }
 }
 
+/* ===================== Main Entry Point =================== */
+
+/**
+ * @brief Program entry point
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return 0 on success, 1 on error
+ *
+ * Usage: toyforth <filename>
+ *
+ * Reads the specified ToyForth source file, compiles it, and executes it.
+ * Properly cleans up all allocated resources before exiting.
+ */
 int main(int argc, char **argv) {
   if (argc != 2) {
     fprintf(stderr, "Usage: %s <filename>\n", argv[0]);

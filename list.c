@@ -1,11 +1,17 @@
+/**
+ * @file list.c
+ * @brief Implementation of dynamic list operations
+ *
+ * Provides functions for manipulating list objects, including appending
+ * elements and automatic capacity management.
+ */
+
 #include "list.h"
 #include "tf.h"
 #include "mem.h"
 
 /* ===================== List Manipulation =================== */
 
-/* Append an object to a tfobjects list.
- * List is resized when the len reaches maximum capacity */
 void listAppendObject(tfobj *list, tfobj *o) {
     if (list->list.len >= list->list.capacity) {
         list->list.capacity = list->list.capacity * 2;
