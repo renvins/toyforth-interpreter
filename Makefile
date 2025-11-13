@@ -12,8 +12,10 @@ $(BIN): $(OBJS)
 %.o: %.c *.h
 	$(CC) $(CFLAGS) -c $<
 
-run: $(BIN)
-	./$(BIN) tests/test.tf
+test: $(BIN)
+	./run_tests.sh
 
 clean:
 	rm -f $(OBJS) $(BIN)
+
+.PHONY: all run test clean

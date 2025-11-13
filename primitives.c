@@ -24,21 +24,21 @@ void primitiveAdd(tfctx *ctx) {
     if (ctx->sp < 2) {
       runtimeError(ctx, "Stack underflow: '+' requires two values");
     }
-    tfobj *first = stackPop(ctx);
-    tfobj *second = stackPop(ctx);
+    tfobj *a = stackPop(ctx);
+    tfobj *b = stackPop(ctx);
   
-    if (first->type != TFOBJ_TYPE_INT || second->type != TFOBJ_TYPE_INT) {
+    if (a->type != TFOBJ_TYPE_INT || b->type != TFOBJ_TYPE_INT) {
       runtimeError(ctx, "The addition requires two integers");
     }
-    int result = first->i + second->i;
+    int result = a->i + b->i;
     tfobj *objResult = createIntObject(result);
   
     stackPush(ctx, objResult);
   
     // We are done with our local references
     decRef(objResult); // Our var ref is gone, ref is on stack now
-    decRef(first);
-    decRef(second);
+    decRef(a);
+    decRef(b);
 }
 
 void primitiveSub(tfctx *ctx) {
@@ -52,6 +52,21 @@ void primitiveSub(tfctx *ctx) {
   }
   int result = (b->i) - (a->i);
   tfobj *resObject = createIntObject(result);
+  
+  stackPush(ctx, resObject);
+  decRef(resObject);
+  decRef(a);
+  decRef(b);
+}
+
+void primitiveMul(tfctx *ctx) {
+  if (ctx->sp < 2) {
+    runtimeError(ctx, "Stack underflow: '*' requires two values");
+  }
+  tfobj *a = stackPop(ctx);
+  tfobj *b = stackPop(ctx);
+
+  tfobj *resObject = createIntObject(a->i*b->i);
   
   stackPush(ctx, resObject);
   decRef(resObject);

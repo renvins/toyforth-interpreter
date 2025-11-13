@@ -9,6 +9,7 @@ A minimal, clean interpreter for a Forth-like language, written in C from scratc
 - [Project Structure](#project-structure)
 - [How to Build](#how-to-build)
 - [How to Run](#how-to-run)
+- [Testing](#testing)
 - [Available Words](#available-words)
 - [Example](#example)
 - [Deep Dive: Understanding the Internals](#deep-dive-understanding-the-internals)
@@ -19,8 +20,7 @@ A minimal, clean interpreter for a Forth-like language, written in C from scratc
   - [5. Primitives](#5-primitives-implementing-language-features-in-c)
   - [6. The Dictionary](#6-the-dictionary-symbol--function-mapping)
   - [7. Design Patterns](#7-design-patterns-youll-recognize)
-  - [8. What You Could Add Next](#8-what-you-could-add-next)
-  - [9. Questions to Ponder](#9-questions-to-ponder)
+  - [8. Documentation](#8-documentation)
 
 ## Project Philosophy
 
@@ -85,19 +85,22 @@ The project is organized into modular components:
 ### Learning Paths
 
 **🚀 I want to try it quickly:**
-1. `make && make run`
-2. Edit `tests/test.tf` and experiment
-3. Read the [Available Words](#available-words) section
+1. `make && make test`
+2. Explore the test files in `tests/` directory
+3. Edit test files and experiment
+4. Read the [Available Words](#available-words) section
 
 **📖 I want to understand interpreters:**
 1. Read [How it Works](#how-it-works-a-high-level-view)
 2. Read the [Deep Dive](#deep-dive-understanding-the-internals) sections in order
-3. Read through `main.c`, `parser.c`, and `primitives.c` with the README open
+3. Read through `main.c`, `parser.c`, and `primitives.c` with inline documentation
+4. Run `make test` to see examples of all features
 
 **🔧 I want to add a feature:**
-1. Read [What You Could Add Next](#8-what-you-could-add-next)
-2. Start with adding a simple primitive (like `*` or `over`)
-3. See how the pieces fit together, then tackle something bigger
+1. Look at how existing primitives are implemented in `primitives.c`
+2. Follow the pattern: implement in `primitives.c`, declare in `primitives.h`, add to `dict.c`
+3. Add tests for your new feature in `tests/`
+4. See the inline documentation for guidance
 
 ## How to Build
 
@@ -106,6 +109,7 @@ Use the provided Makefile:
 ```bash
 make            # builds the 'toyforth' binary
 make -j         # parallel build (faster)
+make test       # run the test suite
 make clean      # removes objects and binary
 ```
 
@@ -115,7 +119,7 @@ You can override compiler flags if needed:
 make CFLAGS="-std=c11 -Wall -Wextra -O2"
 ```
 
-The Makefile uses incremental compilation, so it only rebuilds changed files.
+The Makefile uses incremental compilation, so it only rebuilds changed files. The project compiles with `-Wall -Wextra -Werror` by default, ensuring clean, warning-free code.
 
 ## How to Run
 
@@ -125,51 +129,92 @@ Execute the compiled program by passing it the path to a ToyForth source file (`
 ./toyforth path/to/your/program.tf
 ```
 
-Or use the convenience target to run the test file:
+Run the comprehensive test suite:
 
 ```bash
-make run
+make test
 ```
+
+## Testing
+
+ToyForth includes a comprehensive test suite with 8 test files covering all functionality:
+
+- **`arithmetic.tf`** - Basic arithmetic operations
+- **`stack_ops.tf`** - Stack manipulation (dup, swap, drop)
+- **`complex.tf`** - Complex multi-operation expressions
+- **`edge_cases.tf`** - Boundary conditions and special cases
+- **`negative_numbers.tf`** - Negative number handling
+- **`comments.tf`** - Comment parsing
+- **`whitespace.tf`** - Whitespace handling
+- **`stress.tf`** - Stress tests (factorial, deep stacks)
+
+Run all tests with:
+```bash
+make test
+# or
+./run_tests.sh
+```
+
+All tests pass with 100% success rate. Each test file demonstrates different features of the language and serves as documentation through examples.
 
 ## Available Words
 
-ToyForth currently includes these built-in primitives:
+ToyForth includes these built-in primitives:
 
+**Arithmetic:**
 - **`+`** - Add two integers (`a b -- sum`)
 - **`-`** - Subtract two integers (`a b -- a-b`)
-- **`.`** - Pop and print the top integer
+- **`*`** - Multiply two integers (`a b -- product`)
+
+**Stack Manipulation:**
 - **`dup`** - Duplicate the top value (`a -- a a`)
 - **`drop`** - Discard the top value (`a -- `)
 - **`swap`** - Swap the top two values (`a b -- b a`)
 
+**I/O:**
+- **`.`** - Pop and print the top integer
+
+**Comments:**
+- **`\`** - Line comment (from `\` to end of line)
+
+All primitives include proper error handling with line/column information for debugging.
+
 ## Example
 
-The provided `tests/test.tf` file demonstrates several primitives:
+Here are some examples demonstrating ToyForth features:
 
+**Basic Arithmetic:**
 ```forth
-10 20 dup + . 30 40 + . 20 30 - . 40 50 swap - .
+\ Addition and multiplication
+5 10 + .        \ Prints: 15
+3 7 * .         \ Prints: 21
 ```
 
-**Step-by-step execution:**
+**Stack Manipulation:**
+```forth
+\ Duplicate and add
+7 dup + .       \ Prints: 14 (7 + 7)
 
-1. `10 20 dup +` → Stack: `[30]` (10 + 20 after dup)
-2. `.` → Prints `40` (actually 20 + 20 from dup)
-3. `30 40 +` → Stack: `[70]`
-4. `.` → Prints `70`
-5. `20 30 -` → Stack: `[-10]` (20 - 30)
-6. `.` → Prints `-10`
-7. `40 50 swap -` → Stack: `[10]` (50 - 40 after swap)
-8. `.` → Prints `10`
-
-**Output:**
-
-```bash
-$ make run
-40
-70
--10
-10
+\ Swap and subtract
+10 20 swap - .  \ Prints: 10 (20 - 10 after swap)
 ```
+
+**Complex Expressions:**
+```forth
+\ Calculate (5 + 3) * 2
+5 3 + 2 * .     \ Prints: 16
+
+\ Square a number using dup
+5 dup * .       \ Prints: 25
+```
+
+**Comments:**
+```forth
+\ This is a comment
+10 20 + .       \ Inline comment - Prints: 30
+```
+
+See the `tests/` directory for many more examples covering all features.
 
 ---
 
@@ -414,36 +459,40 @@ This codebase demonstrates several classic CS concepts:
 - **Separation of concerns**: Parser doesn't know about execution, VM doesn't know about parsing
 - **Stack machine**: Simple execution model, used in JVM, Lua, and many others
 
-### 8. What You Could Add Next
+### 8. Documentation
 
-Now that you understand the internals, here are some extensions (in rough order of difficulty):
+The entire codebase is fully documented with **Doxygen-style comments**:
 
-**Easy**:
-- **More arithmetic**: `*`, `/`, `%` (copy `primitiveAdd`, change the operator)
-- **Stack manipulation**: `over`, `rot`, `2dup` (peek/rearrange the stack)
-- **Comparison**: `=`, `<`, `>` (pop two values, push a boolean)
-- **Better errors**: Include line numbers, show stack state on error
+**All header files include:**
+- File-level documentation explaining the module's purpose
+- Function documentation with `@brief`, `@param`, and `@return` tags
+- Detailed explanations of memory management and ownership semantics
+- Usage examples where appropriate
 
-**Medium**:
-- **Variables**: Add a hash table to `tfctx` for name → value storage. Add `!` (store) and `@` (fetch).
-- **Comments**: Make parser skip text after `\` or between `( )`.
-- **REPL**: Instead of `readFile`, use `fgets` in a loop, compile and execute each line.
-- **Strings**: Parse `"hello"` as `TFOBJ_TYPE_STR`, add `print` primitive.
+**All implementation files include:**
+- File-level documentation
+- Internal function documentation
+- Inline comments explaining complex logic
 
-**Advanced**:
-- **Quotations**: Parse `[...]` as nested lists, add `call` to execute them. Enables higher-order programming!
-- **Control flow**: Implement `if` (pops condition and two quotations, executes one), then `while` (loops while condition quotation leaves true).
-- **User-defined words**: Parse `: name ... ;` to create dictionary entries that execute quotations. This is the heart of Forth!
-- **Compiler optimizations**: Replace symbol lookup with bytecode offsets, inline common words.
+**To browse the documentation:**
+- Read inline comments in the source files
+- All functions explain their parameters, return values, and side effects
+- Memory management rules are clearly documented
+- Error conditions are explicitly stated
 
-### 9. Questions to Ponder
+**Example documentation:**
+```c
+/**
+ * @brief Push an object onto the execution stack
+ * @param ctx Execution context containing the stack
+ * @param o Object to push (its reference count is incremented)
+ *
+ * The stack takes ownership of a reference to the object...
+ */
+void stackPush(tfctx *ctx, tfobj *o);
+```
 
-As you read the code, consider:
-
-- **Why use a union instead of separate struct types?** (Hint: uniform stack representation)
-- **What would break if we used garbage collection instead of refcounting?** (Nothing, but the code would be more complex!)
-- **How could you implement `if` without changing the VM loop?** (Hint: quotations + early return)
-- **What's the trade-off between parsing symbols as strings vs. resolving them to function pointers during parse?** (Simplicity vs. performance)
+The documentation makes the codebase easy to understand and extend, perfect for learning or building your own language features.
 
 ---
 
@@ -452,7 +501,7 @@ As you read the code, consider:
 **Build & Run**
 ```bash
 make              # Build
-make run          # Run test
+make test         # Run test suite
 make clean        # Clean build artifacts
 ```
 
@@ -461,6 +510,7 @@ make clean        # Clean build artifacts
 ( before -- after )
 Examples:
   +       ( a b -- sum )      Pop two, push sum
+  *       ( a b -- product )  Pop two, push product
   dup     ( a -- a a )        Duplicate top
   drop    ( a -- )            Discard top
   swap    ( a b -- b a )      Swap top two

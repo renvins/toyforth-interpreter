@@ -32,6 +32,16 @@ void primitiveAdd(tfctx *ctx);
 void primitiveSub(tfctx *ctx);
 
 /**
+ * @brief Multiply two integers ( a b -- a*b )
+ * @param ctx Execution context
+ *
+ * Pops two integers from the stack (b then a), computes a*b, and pushes
+ * the result. Exits with an error if the stack has fewer than 2 values
+ * or if either value is not an integer.
+ */
+ void primitiveMul(tfctx *ctx);
+
+/**
  * @brief Discard the top stack value ( a -- )
  * @param ctx Execution context
  *

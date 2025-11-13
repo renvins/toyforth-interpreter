@@ -37,6 +37,7 @@ typedef struct PrimitiveEntry {
 static const PrimitiveEntry primitiveMappings[] = {
 {"+", primitiveAdd},
 {"-", primitiveSub},
+{"*", primitiveMul},
 {".", primitivePrint},
 {"dup", primitiveDuplicate},
 {"drop", primitiveDrop},

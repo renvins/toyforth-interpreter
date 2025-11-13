@@ -98,7 +98,7 @@ static tfobj *parseObject(tfparser *p) {
   int start_column = p->column;
 
   char c = *p->p;
-  if ((isdigit(c) || (c == '-')) && isdigit(*(p->p + 1))) {
+  if (isdigit(c) || (c == '-' && isdigit(*(p->p + 1)))) {
     char *end_ptr;
     // strtol converts string to long, last arg is base
     // end_ptr moves to the next of last digit
@@ -133,8 +133,16 @@ tfobj *compile(char *progtxt) {
     tfobj *program_list = createListObject(16);
   
     while (*(pstorage.p) != '\0') {
-      skipWhitespace(&pstorage);
-      skipComments(&pstorage);
+      // Skip whitespace and comments (loop in case comment followed by whitespace)
+      while (*pstorage.p != '\0') {
+        skipWhitespace(&pstorage);
+        if (*pstorage.p == '\\') {
+          skipComments(&pstorage);
+        } else {
+          break;
+        }
+      }
+      
       if (*pstorage.p == '\0')
         break;
   
