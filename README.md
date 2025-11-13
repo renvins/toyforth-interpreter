@@ -1,7 +1,5 @@
 # ToyForth Interpreter in C
 
-[![CI](https://github.com/renvins/toyforth/workflows/CI/badge.svg)](https://github.com/renvins/toyforth/actions)
-
 A minimal, clean interpreter for a Forth-like language, written in C from scratch. This project was built for fun and is a perfect starter kit for learning about or building your own programming language.
 
 ## Table of Contents
