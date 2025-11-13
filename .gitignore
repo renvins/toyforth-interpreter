@@ -1,4 +1,22 @@
-*.out
+# Build artifacts
 *.o
+*.out
 toyforth
+a.out
+
+# Editor files
+*.swp
+*.swo
+*~
 .DS_Store
+.vscode/
+.idea/
+
+# Test outputs (temporary)
+*.tmp
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb

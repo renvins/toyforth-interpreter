@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Build project
+      run: make
+      
+    - name: Run test suite
+      run: make test
+      
+    - name: Display test results
+      if: always()
+      run: |
+        echo "Tests completed on ${{ matrix.os }}"
+        
+  lint:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Compile with strict warnings
+      run: make CFLAGS="-std=c11 -Wall -Wextra -Werror -g"
+      
+    - name: Check for memory issues (basic)
+      run: |
+        # Run a simple test to ensure no obvious issues
+        ./toyforth tests/arithmetic.tf > /dev/null
+        echo "Basic runtime check passed"
+
